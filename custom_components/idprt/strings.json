@@ -1,0 +1,121 @@
+{
+  "config": {
+    "flow_title": "{name}",
+    "step": {
+      "user": {
+        "title": "Add iDPRT label printer",
+        "description": "Pick the printer. Make sure the HereLabel phone app is closed so the printer isn't already connected to a phone.",
+        "data": {
+          "address": "Printer",
+          "name": "Name"
+        }
+      },
+      "manual": {
+        "title": "Printer MAC address",
+        "data": {
+          "address": "MAC address (AA:BB:CC:DD:EE:FF)",
+          "name": "Name"
+        }
+      },
+      "bluetooth_confirm": {
+        "title": "iDPRT printer found",
+        "description": "Set up {name} ({address}) as a label printer?",
+        "data": {
+          "name": "Name"
+        }
+      }
+    },
+    "error": {
+      "invalid_mac": "That isn't a valid MAC address"
+    },
+    "abort": {
+      "already_configured": "This printer is already set up"
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Label & printer settings",
+        "data": {
+          "label_width_mm": "Label width (mm)",
+          "label_height_mm": "Label height (mm)",
+          "gap_mm": "Gap between labels (mm)",
+          "density": "Darkness (0-15)",
+          "speed": "Speed (in/s)",
+          "direction": "Print direction (0 or 1)",
+          "x_offset_mm": "Horizontal offset (mm)",
+          "y_offset_mm": "Vertical offset (mm)",
+          "invert_bitmap": "Invert bitmap (only if labels print as negatives)",
+          "write_characteristic": "BLE write characteristic UUID (blank = auto)"
+        }
+      }
+    }
+  },
+  "entity": {
+    "binary_sensor": {
+      "in_range": {
+        "name": "In range"
+      }
+    },
+    "button": {
+      "test_print": {
+        "name": "Test print"
+      }
+    },
+    "image": {
+      "last_label": {
+        "name": "Last label"
+      }
+    }
+  },
+  "services": {
+    "print": {
+      "name": "Print label",
+      "description": "Render a niimbot-style payload and print it.",
+      "fields": {
+        "device_id": {
+          "name": "Printer",
+          "description": "Which printer (optional with one printer)."
+        },
+        "payload": {
+          "name": "Payload",
+          "description": "List of elements: text, multiline, rectangle, line, icon, qrcode."
+        },
+        "width": {
+          "name": "Canvas width",
+          "description": "Payload canvas width in px; scaled to the label."
+        },
+        "height": {
+          "name": "Canvas height",
+          "description": "Payload canvas height in px; scaled to the label."
+        },
+        "copies": {
+          "name": "Copies",
+          "description": "Number of copies."
+        },
+        "rotate": {
+          "name": "Rotate",
+          "description": "Rotate the canvas clockwise before printing."
+        },
+        "density": {
+          "name": "Density",
+          "description": "Ignored; accepted for niimbot.print compatibility."
+        }
+      }
+    },
+    "print_raw": {
+      "name": "Print raw TSPL",
+      "description": "Send TSPL commands straight to the printer.",
+      "fields": {
+        "device_id": {
+          "name": "Printer",
+          "description": "Which printer (optional with one printer)."
+        },
+        "tspl": {
+          "name": "TSPL",
+          "description": "TSPL command text."
+        }
+      }
+    }
+  }
+}

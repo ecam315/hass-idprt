@@ -1,0 +1,52 @@
+print:
+  fields:
+    device_id:
+      selector:
+        device:
+          integration: idprt
+    payload:
+      required: true
+      example: '[{"type":"text","value":"Hello","x":8,"y":8,"size":40}]'
+      selector:
+        object:
+    width:
+      default: 591
+      selector:
+        number:
+          min: 50
+          max: 2000
+    height:
+      default: 354
+      selector:
+        number:
+          min: 50
+          max: 4000
+    copies:
+      default: 1
+      selector:
+        number:
+          min: 1
+          max: 50
+    rotate:
+      default: 0
+      selector:
+        select:
+          options: ["0", "90", "180", "270"]
+    density:
+      selector:
+        number:
+          min: 1
+          max: 5
+
+print_raw:
+  fields:
+    device_id:
+      selector:
+        device:
+          integration: idprt
+    tspl:
+      required: true
+      example: "SIZE 50 mm,30 mm\nCLS\nTEXT 20,20,\"3\",0,1,1,\"Hello\"\nPRINT 1"
+      selector:
+        text:
+          multiline: true
