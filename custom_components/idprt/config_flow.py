@@ -14,8 +14,8 @@ from homeassistant.core import callback
 
 from .const import (
     CONF_DENSITY, CONF_DIRECTION, CONF_GAP, CONF_INVERT, CONF_LABEL_HEIGHT,
-    CONF_LABEL_WIDTH, CONF_SPEED, CONF_WRITE_CHAR, CONF_X_OFFSET, CONF_Y_OFFSET,
-    DEFAULTS, DOMAIN, KNOWN_WRITE_PAIRS,
+    CONF_LABEL_WIDTH, CONF_MAX_WRITE, CONF_SPEED, CONF_WRITE_MODE, CONF_WRITE_CHAR, CONF_X_OFFSET, CONF_Y_OFFSET,
+    DEFAULTS, DOMAIN, KNOWN_WRITE_PAIRS, WRITE_MODES,
 )
 
 MAC_RE = re.compile(r"^([0-9A-F]{2}:){5}[0-9A-F]{2}$")
@@ -128,5 +128,7 @@ class IdprtOptionsFlow(OptionsFlow):
             vol.Required(CONF_Y_OFFSET, default=o[CONF_Y_OFFSET]): vol.All(vol.Coerce(float), vol.Range(-20, 40)),
             vol.Required(CONF_INVERT, default=o[CONF_INVERT]): bool,
             vol.Optional(CONF_WRITE_CHAR, default=o[CONF_WRITE_CHAR]): str,
+            vol.Required(CONF_MAX_WRITE, default=o[CONF_MAX_WRITE]): vol.All(vol.Coerce(int), vol.Range(0, 512)),
+            vol.Required(CONF_WRITE_MODE, default=o[CONF_WRITE_MODE]): vol.In(WRITE_MODES),
         })
         return self.async_show_form(step_id="init", data_schema=schema)

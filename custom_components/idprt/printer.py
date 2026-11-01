@@ -18,7 +18,7 @@ from homeassistant.exceptions import HomeAssistantError
 from .const import (
     CONF_DENSITY, CONF_DIRECTION, CONF_DPI, CONF_GAP, CONF_INVERT,
     CONF_LABEL_HEIGHT, CONF_LABEL_WIDTH, CONF_SPEED, CONF_WRITE_CHAR,
-    CONF_X_OFFSET, CONF_Y_OFFSET, DEFAULTS, IGNORED_SERVICES, KNOWN_WRITE_PAIRS,
+    CONF_MAX_WRITE, CONF_WRITE_MODE, CONF_X_OFFSET, CONF_Y_OFFSET, DEFAULTS, IGNORED_SERVICES, KNOWN_WRITE_PAIRS,
 )
 from .render import render_payload, to_label
 from .tspl import build_bitmap_job, mm_to_dots
@@ -44,6 +44,7 @@ class IdprtPrinter:
         self._char: BleakGATTCharacteristic | None = None
         self._idle_handle: asyncio.TimerHandle | None = None
         self._chunk: int | None = None   # learned max write size
+        self._too_big: int | None = None  # smallest size the printer rejected
         self.last_png: bytes | None = None
         self.last_error: str | None = None
         self._listeners: list[Callable[[], None]] = []
@@ -187,12 +188,16 @@ class IdprtPrinter:
         rejects it (ATT error 13 "Invalid attribute length"). The printer's
         characteristic can be smaller than the negotiated MTU suggests."""
         mtu = int(getattr(client, "mtu_size", 23) or 23)
-        start = self._chunk or max(20, min(mtu - 3, CHUNK_STEPS[0]))
+        limit = int(self.opts.get(CONF_MAX_WRITE) or 0) or max(20, mtu - 3)
+        if self._too_big:
+            limit = min(limit, self._too_big - 1)
+        start = self._chunk or min(limit, CHUNK_STEPS[0])
         sizes = [start] + [s for s in CHUNK_STEPS if s < start]
         for size in sizes:
             try:
                 await self._write_chunks(client, char, data, size)
             except _FirstChunkRejected as err:
+                self._too_big = size
                 _LOGGER.info("%s: %d-byte writes rejected (%s), trying smaller",
                              self.name, size, err.__cause__)
                 continue
@@ -203,7 +208,11 @@ class IdprtPrinter:
         raise BleakError("printer rejected every write size down to 20 bytes")
 
     async def _write_chunks(self, client, char, data: bytes, size: int) -> None:
-        with_response = "write" in char.properties
+        mode = self.opts.get(CONF_WRITE_MODE, "auto")
+        if mode == "no_response" and "write-without-response" in char.properties:
+            with_response = False
+        else:
+            with_response = "write" in char.properties
         for i in range(0, len(data), size):
             try:
                 await client.write_gatt_char(char, data[i:i + size], response=with_response)

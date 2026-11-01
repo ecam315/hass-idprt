@@ -13,6 +13,9 @@ CONF_Y_OFFSET = "y_offset_mm"
 CONF_INVERT = "invert_bitmap"
 CONF_WRITE_CHAR = "write_characteristic"
 CONF_DPI = "dpi"
+CONF_MAX_WRITE = "max_write_bytes"
+CONF_WRITE_MODE = "write_mode"
+WRITE_MODES = ["auto", "response", "no_response"]
 
 DEFAULTS = {
     CONF_LABEL_WIDTH: 50.0,   # same 50 x 30 mm stock the Niimbot used
@@ -26,6 +29,8 @@ DEFAULTS = {
     CONF_INVERT: False,
     CONF_WRITE_CHAR: "",
     CONF_DPI: 203,            # SP320 print head
+    CONF_MAX_WRITE: 0,        # 0 = auto (from MTU, stepping down on rejects)
+    CONF_WRITE_MODE: "auto",
 }
 
 # The Niimbot layouts in this house were drawn on a 591 x 354 canvas
@@ -37,9 +42,9 @@ DEFAULT_CANVAS_H = 354
 # (service, write characteristic) pairs used by common BLE thermal printers,
 # tried in order before falling back to "first writable characteristic".
 KNOWN_WRITE_PAIRS = [
+    ("49535343-fe7d-4ae5-8fa9-9fafd205e455", "49535343-8841-43f4-a8d4-ecbe34729bb3"),
     ("000018f0-0000-1000-8000-00805f9b34fb", "00002af1-0000-1000-8000-00805f9b34fb"),
     ("0000ff00-0000-1000-8000-00805f9b34fb", "0000ff02-0000-1000-8000-00805f9b34fb"),
-    ("49535343-fe7d-4ae5-8fa9-9fafd205e455", "49535343-8841-43f4-a8d4-ecbe34729bb3"),
     ("0000fee7-0000-1000-8000-00805f9b34fb", "0000fec7-0000-1000-8000-00805f9b34fb"),
     ("0000ffe0-0000-1000-8000-00805f9b34fb", "0000ffe1-0000-1000-8000-00805f9b34fb"),
 ]

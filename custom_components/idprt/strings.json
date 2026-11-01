@@ -46,7 +46,9 @@
           "x_offset_mm": "Horizontal offset (mm)",
           "y_offset_mm": "Vertical offset (mm)",
           "invert_bitmap": "Invert bitmap (only if labels print as negatives)",
-          "write_characteristic": "BLE write characteristic UUID (blank = auto)"
+          "write_characteristic": "BLE write characteristic UUID (blank = auto)",
+          "max_write_bytes": "Max bytes per Bluetooth write (0 = auto)",
+          "write_mode": "Write mode (auto / response / no_response)"
         }
       }
     }
