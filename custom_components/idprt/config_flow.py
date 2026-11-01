@@ -67,7 +67,7 @@ class IdprtConfigFlow(ConfigFlow, domain=DOMAIN):
             choice = user_input[CONF_ADDRESS]
             if choice == MANUAL:
                 return await self.async_step_manual()
-            await self.async_set_unique_id(choice.upper())
+            await self.async_set_unique_id(choice.upper(), raise_on_progress=False)
             self._abort_if_unique_id_configured()
             return self._create(choice, user_input.get(CONF_NAME))
 
@@ -94,7 +94,7 @@ class IdprtConfigFlow(ConfigFlow, domain=DOMAIN):
             if not MAC_RE.match(addr):
                 errors[CONF_ADDRESS] = "invalid_mac"
             else:
-                await self.async_set_unique_id(addr)
+                await self.async_set_unique_id(addr, raise_on_progress=False)
                 self._abort_if_unique_id_configured()
                 return self._create(addr, user_input.get(CONF_NAME))
         return self.async_show_form(
