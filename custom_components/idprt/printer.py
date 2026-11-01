@@ -27,6 +27,7 @@ _LOGGER = logging.getLogger(__name__)
 
 IDLE_DISCONNECT_S = 20      # stay connected briefly so batches print back to back
 POST_SEND_SETTLE_S = 0.4
+CHUNK_STEPS = [240, 182, 128, 100, 64, 40, 20]
 
 
 class IdprtPrinter:
@@ -42,6 +43,7 @@ class IdprtPrinter:
         self._client: BleakClientWithServiceCache | None = None
         self._char: BleakGATTCharacteristic | None = None
         self._idle_handle: asyncio.TimerHandle | None = None
+        self._chunk: int | None = None   # learned max write size
         self.last_png: bytes | None = None
         self.last_error: str | None = None
         self._listeners: list[Callable[[], None]] = []
@@ -181,11 +183,42 @@ class IdprtPrinter:
             self._schedule_idle_disconnect()
 
     async def _write(self, client, char, data: bytes) -> None:
-        mtu = getattr(client, "mtu_size", 23) or 23
-        chunk = max(20, min(int(mtu) - 3, 240))
+        """Send data in chunks, stepping the chunk size down if the printer
+        rejects it (ATT error 13 "Invalid attribute length"). The printer's
+        characteristic can be smaller than the negotiated MTU suggests."""
+        mtu = int(getattr(client, "mtu_size", 23) or 23)
+        start = self._chunk or max(20, min(mtu - 3, CHUNK_STEPS[0]))
+        sizes = [start] + [s for s in CHUNK_STEPS if s < start]
+        for size in sizes:
+            try:
+                await self._write_chunks(client, char, data, size)
+            except _FirstChunkRejected as err:
+                _LOGGER.info("%s: %d-byte writes rejected (%s), trying smaller",
+                             self.name, size, err.__cause__)
+                continue
+            if self._chunk != size:
+                _LOGGER.info("%s: using %d-byte writes", self.name, size)
+            self._chunk = size
+            return
+        raise BleakError("printer rejected every write size down to 20 bytes")
+
+    async def _write_chunks(self, client, char, data: bytes, size: int) -> None:
         with_response = "write" in char.properties
-        for i in range(0, len(data), chunk):
-            await client.write_gatt_char(char, data[i:i + chunk], response=with_response)
+        for i in range(0, len(data), size):
+            try:
+                await client.write_gatt_char(char, data[i:i + size], response=with_response)
+            except BleakError as err:
+                if i == 0 and _is_length_error(err):
+                    raise _FirstChunkRejected from err
+                raise
             if not with_response:
                 await asyncio.sleep(0.02)   # no ACKs: pace so the proxy/printer keep up
 
+
+class _FirstChunkRejected(Exception):
+    """The very first write was too long; nothing reached the printer."""
+
+
+def _is_length_error(err: Exception) -> bool:
+    text = str(err).lower()
+    return "invalid attribute length" in text or "error=13" in text
