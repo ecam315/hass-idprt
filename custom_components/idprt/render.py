@@ -66,12 +66,60 @@ def _fit_font(draw: ImageDraw.ImageDraw, text: str, x: float, size: int,
     return font
 
 
-def _draw_text(draw, el, canvas_w):
+def _wrap(draw, text: str, font, width: float) -> list[str]:
+    """Greedy word wrap to `width` px; words longer than a line are split."""
+    def fits(s: str) -> bool:
+        return draw.textlength(s, font=font) <= width
+
+    lines: list[str] = []
+    for para in text.split("\n"):
+        line = ""
+        for word in para.split():
+            cand = f"{line} {word}" if line else word
+            if fits(cand):
+                line = cand
+                continue
+            if line:
+                lines.append(line)
+            while not fits(word) and len(word) > 1:
+                cut = len(word) - 1
+                while cut > 1 and not fits(word[:cut]):
+                    cut -= 1
+                lines.append(word[:cut])
+                word = word[cut:]
+            line = word
+        lines.append(line)
+    return lines
+
+
+def _draw_wrapped(draw, el, text: str, x: float, y: float, canvas_w: int, canvas_h: int):
+    """Wrap text inside max_width. If max_height is given (default: to the
+    bottom of the label), step the size down only until the wrapped block fits."""
+    width = min(_num(el, "max_width"), canvas_w - x - 2)
+    max_h = _num(el, "max_height", canvas_h - y - 2)
+    size = int(_num(el, "size", 20))
+    spacing = _num(el, "line_spacing", 1.15)
+    while True:
+        font = _font(str(TEXT_FONT), size)
+        lines = _wrap(draw, text, font, width)
+        step = size * spacing
+        if len(lines) * step - (step - size) <= max_h or size <= 12:
+            break
+        size -= 1
+    fill = _color(el.get("color", "black"))
+    for i, line in enumerate(lines):
+        draw.text((x, y + i * step), line, fill=fill, font=font, anchor="lt")
+
+
+def _draw_text(draw, el, canvas_w, canvas_h=10_000):
     text = str(el.get("value", ""))
     if not text:
         return
     x, y = _num(el, "x"), _num(el, "y")
     anchor = str(el.get("anchor", "lt"))
+    if el.get("max_width") and anchor[0] == "l":
+        _draw_wrapped(draw, el, text, x, y, canvas_w, canvas_h)
+        return
     size = int(_num(el, "size", 20))
     font = _fit_font(draw, text, x, size, canvas_w, anchor) if el.get("fit", True) \
         else _font(str(TEXT_FONT), size)
@@ -140,7 +188,7 @@ def render_payload(payload: list[dict] | str, width: int, height: int,
         if el.get("visible", True) in (False, "false"):
             continue
         if kind == "text":
-            _draw_text(draw, el, img.width)
+            _draw_text(draw, el, img.width, img.height)
         elif kind == "multiline":
             _draw_multiline(draw, el, img.width)
         elif kind == "rectangle":
