@@ -16,6 +16,7 @@ CONF_DPI = "dpi"
 CONF_MAX_WRITE = "max_write_bytes"
 CONF_WRITE_MODE = "write_mode"
 CONF_ROTATE = "rotate"
+CONF_SYNC_EVERY = "sync_every"
 WRITE_MODES = ["auto", "response", "no_response"]
 
 DEFAULTS = {
@@ -32,6 +33,7 @@ DEFAULTS = {
     CONF_DPI: 203,            # SP320 print head
     CONF_MAX_WRITE: 0,        # 0 = auto (from MTU, stepping down on rejects)
     CONF_WRITE_MODE: "auto",
+    CONF_SYNC_EVERY: 8,       # no_response mode: ACK every Nth write
     CONF_ROTATE: 0,           # degrees clockwise, for stock fed long-edge first
 }
 

@@ -14,7 +14,7 @@ from homeassistant.core import callback
 
 from .const import (
     CONF_DENSITY, CONF_DIRECTION, CONF_GAP, CONF_INVERT, CONF_LABEL_HEIGHT,
-    CONF_LABEL_WIDTH, CONF_MAX_WRITE, CONF_ROTATE, CONF_SPEED, CONF_WRITE_MODE, CONF_WRITE_CHAR, CONF_X_OFFSET, CONF_Y_OFFSET,
+    CONF_LABEL_WIDTH, CONF_MAX_WRITE, CONF_ROTATE, CONF_SPEED, CONF_SYNC_EVERY, CONF_WRITE_MODE, CONF_WRITE_CHAR, CONF_X_OFFSET, CONF_Y_OFFSET,
     DEFAULTS, DOMAIN, KNOWN_WRITE_PAIRS, WRITE_MODES,
 )
 
@@ -130,6 +130,7 @@ class IdprtOptionsFlow(OptionsFlow):
             vol.Optional(CONF_WRITE_CHAR, default=o[CONF_WRITE_CHAR]): str,
             vol.Required(CONF_MAX_WRITE, default=o[CONF_MAX_WRITE]): vol.All(vol.Coerce(int), vol.Range(0, 512)),
             vol.Required(CONF_WRITE_MODE, default=o[CONF_WRITE_MODE]): vol.In(WRITE_MODES),
+            vol.Required(CONF_SYNC_EVERY, default=int(o[CONF_SYNC_EVERY])): vol.All(vol.Coerce(int), vol.Range(1, 64)),
             vol.Required(CONF_ROTATE, default=int(o[CONF_ROTATE])): vol.All(vol.Coerce(int), vol.In([0, 90, 180, 270])),
         })
         return self.async_show_form(step_id="init", data_schema=schema)

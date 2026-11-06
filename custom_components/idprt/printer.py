@@ -18,7 +18,7 @@ from homeassistant.exceptions import HomeAssistantError
 from .const import (
     CONF_DENSITY, CONF_DIRECTION, CONF_DPI, CONF_GAP, CONF_INVERT,
     CONF_LABEL_HEIGHT, CONF_LABEL_WIDTH, CONF_SPEED, CONF_WRITE_CHAR,
-    CONF_MAX_WRITE, CONF_ROTATE, CONF_WRITE_MODE, CONF_X_OFFSET, CONF_Y_OFFSET, DEFAULTS, IGNORED_SERVICES, KNOWN_WRITE_PAIRS,
+    CONF_MAX_WRITE, CONF_ROTATE, CONF_SYNC_EVERY, CONF_WRITE_MODE, CONF_X_OFFSET, CONF_Y_OFFSET, DEFAULTS, IGNORED_SERVICES, KNOWN_WRITE_PAIRS,
 )
 from .render import render_payload, to_label
 from .tspl import build_bitmap_job, mm_to_dots
@@ -209,20 +209,31 @@ class IdprtPrinter:
         raise BleakError("printer rejected every write size down to 20 bytes")
 
     async def _write_chunks(self, client, char, data: bytes, size: int) -> None:
+        """Write data in chunks.
+
+        response:    every chunk waits for the printer's ACK (safe, slow).
+        no_response: unacknowledged writes, but every Nth chunk and the last
+                     one are acknowledged. An ACKed write queues behind the
+                     unACKed ones, so it acts as flow control and stops HA
+                     from outrunning the Bluetooth proxy and dropping bytes.
+        """
+        can_ack = "write" in char.properties
         mode = self.opts.get(CONF_WRITE_MODE, "auto")
-        if mode == "no_response" and "write-without-response" in char.properties:
-            with_response = False
-        else:
-            with_response = "write" in char.properties
-        for i in range(0, len(data), size):
+        no_ack_ok = "write-without-response" in char.properties
+        fast = no_ack_ok and (mode == "no_response" or not can_ack)
+        sync_every = max(1, int(self.opts.get(CONF_SYNC_EVERY) or 8))
+        offsets = range(0, len(data), size)
+        last = offsets[-1] if offsets else 0
+        for n, i in enumerate(offsets):
+            ack = (not fast) or (can_ack and ((n + 1) % sync_every == 0 or i == last))
             try:
-                await client.write_gatt_char(char, data[i:i + size], response=with_response)
+                await client.write_gatt_char(char, data[i:i + size], response=ack)
             except BleakError as err:
                 if i == 0 and _is_length_error(err):
                     raise _FirstChunkRejected from err
                 raise
-            if not with_response:
-                await asyncio.sleep(0.02)   # no ACKs: pace so the proxy/printer keep up
+            if not ack:
+                await asyncio.sleep(0.015)
 
 
 class _FirstChunkRejected(Exception):
