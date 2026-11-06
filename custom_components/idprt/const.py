@@ -15,6 +15,7 @@ CONF_WRITE_CHAR = "write_characteristic"
 CONF_DPI = "dpi"
 CONF_MAX_WRITE = "max_write_bytes"
 CONF_WRITE_MODE = "write_mode"
+CONF_ROTATE = "rotate"
 WRITE_MODES = ["auto", "response", "no_response"]
 
 DEFAULTS = {
@@ -31,6 +32,7 @@ DEFAULTS = {
     CONF_DPI: 203,            # SP320 print head
     CONF_MAX_WRITE: 0,        # 0 = auto (from MTU, stepping down on rejects)
     CONF_WRITE_MODE: "auto",
+    CONF_ROTATE: 0,           # degrees clockwise, for stock fed long-edge first
 }
 
 # The Niimbot layouts in this house were drawn on a 591 x 354 canvas

@@ -207,6 +207,12 @@ def render_payload(payload: list[dict] | str, width: int, height: int,
 
 
 def to_label(img: Image.Image, dots_w: int, dots_h: int) -> Image.Image:
-    """Scale the canvas to the printer's dot grid and threshold to 1-bit."""
-    scaled = img.resize((dots_w, dots_h), Image.Resampling.LANCZOS)
+    """Scale the canvas onto the printer's dot grid without distorting it
+    (fit inside, centred on white), then threshold to 1-bit."""
+    scale = min(dots_w / img.width, dots_h / img.height)
+    w = max(1, round(img.width * scale))
+    h = max(1, round(img.height * scale))
+    scaled = Image.new("L", (dots_w, dots_h), 255)
+    scaled.paste(img.resize((w, h), Image.Resampling.LANCZOS),
+                 ((dots_w - w) // 2, (dots_h - h) // 2))
     return scaled.point(lambda p: 255 if p >= 140 else 0).convert("1", dither=Image.Dither.NONE)

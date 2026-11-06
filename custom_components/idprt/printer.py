@@ -18,7 +18,7 @@ from homeassistant.exceptions import HomeAssistantError
 from .const import (
     CONF_DENSITY, CONF_DIRECTION, CONF_DPI, CONF_GAP, CONF_INVERT,
     CONF_LABEL_HEIGHT, CONF_LABEL_WIDTH, CONF_SPEED, CONF_WRITE_CHAR,
-    CONF_MAX_WRITE, CONF_WRITE_MODE, CONF_X_OFFSET, CONF_Y_OFFSET, DEFAULTS, IGNORED_SERVICES, KNOWN_WRITE_PAIRS,
+    CONF_MAX_WRITE, CONF_ROTATE, CONF_WRITE_MODE, CONF_X_OFFSET, CONF_Y_OFFSET, DEFAULTS, IGNORED_SERVICES, KNOWN_WRITE_PAIRS,
 )
 from .render import render_payload, to_label
 from .tspl import build_bitmap_job, mm_to_dots
@@ -67,6 +67,7 @@ class IdprtPrinter:
     def build_job(self, payload: Any, width: int, height: int,
                   copies: int = 1, rotate: int = 0) -> tuple[bytes, bytes]:
         """Executor-safe: render payload -> (tspl bytes, preview png)."""
+        rotate = (int(rotate) + int(self.opts.get(CONF_ROTATE) or 0)) % 360
         canvas = render_payload(payload, width, height, rotate)
         dw, dh = self._dots()
         label = to_label(canvas, dw, dh)

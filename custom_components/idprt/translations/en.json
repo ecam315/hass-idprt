@@ -48,7 +48,8 @@
           "invert_bitmap": "Invert bitmap (only if labels print as negatives)",
           "write_characteristic": "BLE write characteristic UUID (blank = auto)",
           "max_write_bytes": "Max bytes per Bluetooth write (0 = auto)",
-          "write_mode": "Write mode (auto / response / no_response)"
+          "write_mode": "Write mode (auto / response / no_response)",
+          "rotate": "Rotate labels (degrees clockwise: 0, 90, 180, 270)"
         }
       }
     }
